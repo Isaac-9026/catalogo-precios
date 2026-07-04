@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 import '../../product_detail/presentation/product_detail_screen.dart';
 import '../../admin/presentation/admin_screen.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/models/product.dart';
+import '../data/search_repository.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -12,29 +13,48 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  int _productCount = 0;
+  final _searchRepo = SearchRepository();
+  List<Product> _results = [];
+  Timer? _debounce;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _checkDb();
+    _performSearch('');
   }
 
-  Future<void> _checkDb() async {
-    final db = await DatabaseHelper.instance.database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM products');
-    if (mounted) {
-      setState(() {
-        _productCount = Sqflite.firstIntValue(result) ?? 0;
-      });
-    }
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    
+    final results = await _searchRepo.searchProducts(query);
+    
+    if (!mounted) return;
+    setState(() {
+      _results = results;
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catálogo de Precios'),
+        title: const Text('Consultar Precio'),
         actions: [
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
@@ -47,28 +67,52 @@ class _SearchScreenState extends State<SearchScreen> {
           )
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Búsqueda (Placeholder)',
-              style: TextStyle(fontSize: 24),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Buscar producto por nombre...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: _onSearchChanged,
             ),
-            const SizedBox(height: 16),
-            Text('Productos en BD: $_productCount'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProductDetailScreen()),
+          ),
+          if (_isLoading)
+             const LinearProgressIndicator(),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _results.length,
+              itemBuilder: (context, index) {
+                final product = _results[index];
+                return ListTile(
+                  title: Text(product.name),
+                  subtitle: Text(product.brand ?? 'Sin marca'),
+                  trailing: Text(
+                    'S/ ${product.price.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () {
+                    // Cierra el teclado antes de navegar (opcional pero buena UX)
+                    FocusScope.of(context).unfocus();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailScreen(product: product),
+                      ),
+                    );
+                  },
                 );
               },
-              child: const Text('Ir a Detalle (Temporal)'),
-            )
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
