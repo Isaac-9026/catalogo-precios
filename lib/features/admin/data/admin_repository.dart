@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/database/database_helper.dart';
 import '../../../core/models/product.dart';
@@ -84,5 +86,32 @@ class AdminRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<String?> getAdminPinHash() async {
+    final db = await DatabaseHelper.instance.database;
+    final result = await db.query('app_config', where: 'id = 1');
+    if (result.isNotEmpty) {
+      final hash = result.first['admin_pin_hash'] as String?;
+      if (hash != null && hash.isNotEmpty) {
+        return hash;
+      }
+    }
+    return null;
+  }
+
+  Future<void> setAdminPinHash(String hash) async {
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'app_config',
+      {'admin_pin_hash': hash},
+      where: 'id = 1',
+    );
+  }
+
+  String hashPin(String pin) {
+    var bytes = utf8.encode(pin);
+    var digest = sha256.convert(bytes);
+    return digest.toString();
   }
 }
