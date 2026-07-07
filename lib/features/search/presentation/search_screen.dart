@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../product_detail/presentation/product_detail_screen.dart';
 import '../../admin/presentation/admin_screen.dart';
+import '../../admin/presentation/pin_screen.dart';
 import '../../../core/models/product.dart';
 import '../data/search_repository.dart';
 
@@ -59,9 +60,10 @@ class _SearchScreenState extends State<SearchScreen> {
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
             onPressed: () {
+              FocusScope.of(context).unfocus();
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AdminScreen()),
+                MaterialPageRoute(builder: (context) => const PinScreen()),
               );
             },
           )
