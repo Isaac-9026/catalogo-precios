@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/product.dart';
+import '../../../core/utils/time_formatter.dart';
+import '../../sync/data/sync_repository.dart';
 import '../data/admin_repository.dart';
 import 'product_form_screen.dart';
 
@@ -12,8 +14,11 @@ class AdminScreen extends StatefulWidget {
 
 class _AdminScreenState extends State<AdminScreen> {
   final _repo = AdminRepository();
+  final _syncRepo = SyncRepository();
   List<Product> _products = [];
   bool _isLoading = true;
+  bool _isSyncing = false;
+  String? _lastSyncedAt;
 
   @override
   void initState() {
@@ -24,11 +29,42 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _loadProducts() async {
     setState(() => _isLoading = true);
     final products = await _repo.getAllProducts();
+    final syncedAt = await _syncRepo.getLastSyncedAt();
     if (mounted) {
       setState(() {
         _products = products;
+        _lastSyncedAt = syncedAt;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _performSync() async {
+    setState(() => _isSyncing = true);
+    try {
+      await _syncRepo.performSync();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sincronización completada'), backgroundColor: Colors.green),
+        );
+      }
+      _loadProducts(); // Recarga lista y tiempo
+    } on SyncOfflineException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ocurrió un error al sincronizar'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
     }
   }
 
@@ -63,10 +99,41 @@ class _AdminScreenState extends State<AdminScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administración'),
+        actions: [
+          if (_isSyncing)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.sync),
+              onPressed: _performSync,
+            ),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            color: Colors.blueGrey.shade50,
+            child: Text(
+              'Última sincronización: ${TimeFormatter.formatTimeAgo(_lastSyncedAt)}',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.blueGrey.shade700, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
               itemCount: _products.length,
               itemBuilder: (context, index) {
                 final p = _products[index];
@@ -111,6 +178,9 @@ class _AdminScreenState extends State<AdminScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () async {
