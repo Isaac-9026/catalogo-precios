@@ -82,7 +82,7 @@ class DatabaseHelper {
     });
 
     // Dummy products
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     final uuid = const Uuid();
 
     final testProducts = [

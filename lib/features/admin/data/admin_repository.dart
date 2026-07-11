@@ -19,7 +19,7 @@ class AdminRepository {
 
   Future<void> createProduct(Product product) async {
     final db = await DatabaseHelper.instance.database;
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     
     await db.transaction((txn) async {
       await txn.insert('products', product.toMap());
@@ -35,7 +35,7 @@ class AdminRepository {
 
   Future<void> updateProduct(Product product, bool priceChanged) async {
     final db = await DatabaseHelper.instance.database;
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     
     await db.transaction((txn) async {
       final map = product.toMap();
@@ -61,7 +61,7 @@ class AdminRepository {
 
   Future<void> deleteProduct(String id) async {
     final db = await DatabaseHelper.instance.database;
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     // REGLA: Nunca hacer DELETE físico. Solo soft-delete.
     await db.update(
       'products',
@@ -76,7 +76,7 @@ class AdminRepository {
 
   Future<void> toggleActiveStatus(String id, int isActive) async {
     final db = await DatabaseHelper.instance.database;
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     await db.update(
       'products',
       {

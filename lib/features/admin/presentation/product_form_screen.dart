@@ -55,7 +55,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     setState(() => _isSaving = true);
 
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     final price = double.parse(_priceCtrl.text);
 
     if (widget.product == null) {
