@@ -1,6 +1,11 @@
 # Catálogo de Precios
 
-App móvil Flutter para que empleados de **una sola tienda** consulten precios de productos por nombre, en segundos, funcionando **100% offline**. No es un POS, no es inventario, no es ERP — es exclusivamente consulta de precios + administración básica de productos.
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+
+Aplicación móvil desarrollada en Flutter para la consulta rápida de precios y productos. Diseñada con un enfoque **100% offline-first**, proporciona a los empleados de la tienda una herramienta de búsqueda instantánea y administración básica del catálogo sin depender de una conexión a internet.
 
 ## Características Principales
 
