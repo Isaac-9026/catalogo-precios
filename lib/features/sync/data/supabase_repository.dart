@@ -1,10 +1,16 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/product.dart';
+import '../../../core/supabase/supabase_config.dart';
 
 class SupabaseRepository {
-  final SupabaseClient _client = Supabase.instance.client;
+  SupabaseClient get _client {
+    if (!SupabaseConfig.isConfigured) {
+      throw Exception('Modo local: Supabase no está configurado.');
+    }
+    return Supabase.instance.client;
+  }
 
-  // Fase 5: Solo creamos la infraestructura básica. 
+  // Fase 5: Solo creamos la infraestructura bAsica. 
   // No hay lógica de push/pull compleja aún.
   
   Future<List<Product>> fetchRemoteProducts() async {

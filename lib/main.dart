@@ -3,25 +3,32 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/database_helper.dart';
 import 'features/search/presentation/search_screen.dart';
 import 'core/supabase/env.dart';
+import 'core/supabase/supabase_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await Supabase.initialize(
-    url: Env.supabaseUrl,
-    anonKey: Env.supabaseAnonKey,
-  );
+  if (SupabaseConfig.isConfigured) {
+    try {
+      await Supabase.initialize(
+        url: Env.supabaseUrl,
+        anonKey: Env.supabaseAnonKey,
+      );
 
-  // PRUEBA TEMPORAL DE CONEXIÓN A SUPABASE (FASE 5)
-  try {
-    final response = await Supabase.instance.client.from('products').select();
-    debugPrint('=== SUPABASE CONNECTION TEST SUCCESS ===');
-    debugPrint(response.toString());
-    debugPrint('=========================================');
-  } catch (e) {
-    debugPrint('=== SUPABASE CONNECTION TEST FAILED ===');
-    debugPrint(e.toString());
-    debugPrint('========================================');
+      // PRUEBA TEMPORAL DE CONEXIÓN A SUPABASE (FASE 5)
+      final response = await Supabase.instance.client.from('products').select();
+      debugPrint('=== SUPABASE CONNECTION TEST SUCCESS ===');
+      debugPrint(response.toString());
+      debugPrint('=========================================');
+    } catch (e) {
+      debugPrint('=== SUPABASE CONNECTION TEST FAILED ===');
+      debugPrint(e.toString());
+      debugPrint('========================================');
+    }
+  } else {
+    debugPrint('=== SUPABASE NOT CONFIGURED ===');
+    debugPrint('Running in 100% offline mode. Supabase initialization skipped.');
+    debugPrint('================================');
   }
 
   // Initialize Database
