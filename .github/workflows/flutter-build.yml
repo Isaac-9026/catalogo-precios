@@ -1,0 +1,62 @@
+name: Android Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch: 
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17' 
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # Usa la versión estable más reciente
+          cache: true # Guarda en caché Flutter para acelerar futuros builds
+
+      - name: Create env.dart file
+        run: |
+          mkdir -p lib/core/supabase
+          # Si los secretos de GitHub no están definidos, usamos valores dummy para que compile.
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          if [ -z "$SUPABASE_URL" ]; then SUPABASE_URL="https://placeholder.supabase.co"; fi
+          if [ -z "$SUPABASE_ANON_KEY" ]; then SUPABASE_ANON_KEY="placeholder_anon_key"; fi
+          
+          cat <<EOF > lib/core/supabase/env.dart
+          class Env {
+            static const String supabaseUrl = '$SUPABASE_URL';
+            static const String supabaseAnonKey = '$SUPABASE_ANON_KEY';
+          }
+          EOF
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
