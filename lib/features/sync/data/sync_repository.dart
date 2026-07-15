@@ -2,9 +2,15 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/supabase/supabase_config.dart';
 
 class SyncRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient get _supabase {
+    if (!SupabaseConfig.isConfigured) {
+      throw Exception('Modo local: Supabase no está configurado.');
+    }
+    return Supabase.instance.client;
+  }
 
   Future<String?> getLastSyncedAt() async {
     final db = await DatabaseHelper.instance.database;
