@@ -5,6 +5,7 @@ import '../../admin/presentation/admin_screen.dart';
 import '../../admin/presentation/pin_screen.dart';
 import '../../../core/models/product.dart';
 import '../data/search_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -18,6 +19,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Product> _results = [];
   Timer? _debounce;
   bool _isLoading = false;
+  String _currentQuery = '';
 
   @override
   void initState() {
@@ -40,7 +42,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _performSearch(String query) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _currentQuery = query;
+    });
     
     final results = await _searchRepo.searchProducts(query);
     
@@ -75,47 +80,131 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               autofocus: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Buscar producto por nombre...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                prefixIcon: _isLoading 
+                    ? const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : const Icon(Icons.search),
               ),
               onChanged: _onSearchChanged,
             ),
           ),
-          if (_isLoading)
-             const LinearProgressIndicator(),
+          // Eliminamos el LinearProgressIndicator porque ahora está en el buscador
+          if (!_isLoading && _results.isEmpty && _currentQuery.isNotEmpty)
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'No se encontraron productos',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
           Expanded(
             child: ListView.builder(
               itemCount: _results.length,
               itemBuilder: (context, index) {
                 final product = _results[index];
-                return ListTile(
-                  title: Text(product.name),
-                  subtitle: Text(product.brand ?? 'Sin marca'),
-                  trailing: Text(
-                    'S/ ${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                return Card(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      FocusScope.of(context).unfocus();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailScreen(product: product),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          Hero(
+                            tag: 'product_image_${product.id}',
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: product.imageUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: product.imageUrl!,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) => _buildPlaceholder(),
+                                    )
+                                  : _buildPlaceholder(),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (product.brand != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    product.brand!,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'S/ ${product.price.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  onTap: () {
-                    // Cierra el teclado antes de navegar (opcional pero buena UX)
-                    FocusScope.of(context).unfocus();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductDetailScreen(product: product),
-                      ),
-                    );
-                  },
                 );
               },
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 60,
+      height: 60,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image_not_supported, color: Colors.grey),
     );
   }
 }
