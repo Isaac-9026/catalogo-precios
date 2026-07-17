@@ -4,6 +4,7 @@ import 'core/database/database_helper.dart';
 import 'features/search/presentation/search_screen.dart';
 import 'core/supabase/env.dart';
 import 'core/supabase/supabase_config.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,10 +45,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Catálogo de Precios',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: const SearchScreen(),
     );
   }
