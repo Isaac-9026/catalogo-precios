@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/models/product.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -18,18 +19,28 @@ class ProductDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: SizedBox(
-                height: 200,
-                width: 200,
-                child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        product.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.image_not_supported, size: 100, color: Colors.grey);
-                        },
-                      )
-                    : const Icon(Icons.image, size: 100, color: Colors.grey),
+              child: Hero(
+                tag: 'product_image_${product.id}',
+                child: Container(
+                  height: 250,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: product.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.image_not_supported,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : const Icon(Icons.image, size: 80, color: Colors.grey),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -39,12 +50,19 @@ class ProductDetailScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'S/ ${product.price.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                color: Colors.green[700],
-                fontWeight: FontWeight.w600,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'S/ ${product.price.toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const SizedBox(height: 16),
